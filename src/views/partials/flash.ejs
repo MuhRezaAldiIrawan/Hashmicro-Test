@@ -1,0 +1,16 @@
+<% if (locals.flashSuccess && flashSuccess.length > 0) { %>
+  <% flashSuccess.forEach(msg => { %>
+    <div class="flash flash-success">
+      <span>✓</span> <%= msg %>
+      <button class="flash-close" onclick="this.parentElement.remove()">✕</button>
+    </div>
+  <% }) %>
+<% } %>
+<% if (locals.flashError && flashError.length > 0) { %>
+  <% flashError.forEach(msg => { %>
+    <div class="flash flash-error">
+      <span>✕</span> <%= msg %>
+      <button class="flash-close" onclick="this.parentElement.remove()">✕</button>
+    </div>
+  <% }) %>
+<% } %>

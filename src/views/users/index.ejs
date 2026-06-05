@@ -1,0 +1,50 @@
+<%- include('../partials/head') %>
+<% locals.path = '/users' %>
+<%- include('../partials/navbar') %>
+
+<main class="main-content">
+  <%- include('../partials/flash') %>
+
+  <div class="page-header">
+    <div>
+      <h1 class="page-title">User Management</h1>
+      <p class="page-subtitle">Admin only — <%= users.length %> user(s)</p>
+    </div>
+    <a href="/users/new" class="btn btn-primary">+ Add User</a>
+  </div>
+
+  <div class="card">
+    <% if (users.length === 0) { %>
+      <div class="empty-state">No users yet.</div>
+    <% } else { %>
+    <div class="table-wrap">
+      <table class="table">
+        <thead>
+          <tr><th>Name</th><th>Username</th><th>Email</th><th>Role</th><th>Created</th><th>Actions</th></tr>
+        </thead>
+        <tbody>
+          <% users.forEach(user => { %>
+          <tr>
+            <td><strong><%= user.name %></strong></td>
+            <td><code><%= user.username %></code></td>
+            <td class="muted"><%= user.email || '—' %></td>
+            <td><span class="badge <%= user.role === 'admin' ? 'badge-purple' : 'badge-gray' %>"><%= user.role %></span></td>
+            <td class="muted"><%= new Date(user.createdAt).toLocaleDateString('id-ID') %></td>
+            <td class="actions-cell">
+              <a href="/users/<%= user._id %>/edit" class="btn btn-xs btn-secondary">Edit</a>
+              <% if (user._id !== currentUser._id) { %>
+              <form action="/users/<%= user._id %>?_method=DELETE" method="POST" style="display:inline;" onsubmit="return confirm('Delete <%= user.username %>?')">
+                <button type="submit" class="btn btn-xs btn-danger">Delete</button>
+              </form>
+              <% } %>
+            </td>
+          </tr>
+          <% }) %>
+        </tbody>
+      </table>
+    </div>
+    <% } %>
+  </div>
+</main>
+
+<%- include('../partials/footer') %>

@@ -1,0 +1,144 @@
+<%- include('../partials/head') %>
+<% locals.path = '/dashboard' %>
+
+<%- include('../partials/navbar') %>
+
+<main class="main-content">
+  <%- include('../partials/flash') %>
+
+  <div class="page-header">
+    <div>
+      <h1 class="page-title">Dashboard</h1>
+      <p class="page-subtitle">Inventory overview & analytics</p>
+    </div>
+  </div>
+
+  <!-- Summary Cards -->
+  <div class="stat-grid">
+    <div class="stat-card">
+      <div class="stat-icon stat-blue">◈</div>
+      <div class="stat-info">
+        <span class="stat-value"><%= analytics.summary.totalProducts %></span>
+        <span class="stat-label">Total Products</span>
+      </div>
+    </div>
+    <div class="stat-card">
+      <div class="stat-icon stat-green">◉</div>
+      <div class="stat-info">
+        <span class="stat-value"><%= analytics.summary.totalStock.toLocaleString() %></span>
+        <span class="stat-label">Total Stock Units</span>
+      </div>
+    </div>
+    <div class="stat-card">
+      <div class="stat-icon stat-yellow">◎</div>
+      <div class="stat-info">
+        <span class="stat-value">Rp <%= analytics.summary.totalValue.toLocaleString('id-ID', {maximumFractionDigits: 0}) %></span>
+        <span class="stat-label">Total Inventory Value</span>
+      </div>
+    </div>
+    <div class="stat-card">
+      <div class="stat-icon stat-red">◆</div>
+      <div class="stat-info">
+        <span class="stat-value"><%= lowStock.length %></span>
+        <span class="stat-label">Low Stock Alerts</span>
+      </div>
+    </div>
+    <% if (currentUser && currentUser.role === 'admin') { %>
+    <div class="stat-card">
+      <div class="stat-icon stat-purple">◇</div>
+      <div class="stat-info">
+        <span class="stat-value"><%= totalUsers %></span>
+        <span class="stat-label">System Users</span>
+      </div>
+    </div>
+    <% } %>
+  </div>
+
+  <div class="two-col-grid">
+    <!-- Category Analytics -->
+    <div class="card">
+      <div class="card-header">
+        <h2 class="card-title">Category Analytics</h2>
+        <span class="badge badge-info">Nested Loop + Math</span>
+      </div>
+      <% if (analytics.categories.length === 0) { %>
+        <div class="empty-state">No products yet. <a href="/products/new">Add one →</a></div>
+      <% } else { %>
+      <div class="category-list">
+        <% analytics.categories.forEach(cat => { %>
+        <div class="category-row">
+          <div class="category-name"><%= cat.name %></div>
+          <div class="category-stats">
+            <span class="tag"><%= cat.productCount %> products</span>
+            <span class="tag">Rp <%= cat.totalStockValue.toLocaleString('id-ID', {maximumFractionDigits: 0}) %></span>
+            <span class="tag tag-health" style="background: hsl(<%= Math.floor(cat.stockHealthPct * 1.2) %>, 60%, 92%); color: hsl(<%= Math.floor(cat.stockHealthPct * 1.2) %>, 50%, 35%)">
+              Health <%= cat.stockHealthPct.toFixed(0) %>%
+            </span>
+          </div>
+          <div class="category-bar">
+            <div class="bar-fill" style="width: <%= cat.stockHealthPct %>%; background: hsl(<%= Math.floor(cat.stockHealthPct * 1.2) %>, 60%, 55%)"></div>
+          </div>
+        </div>
+        <% }) %>
+      </div>
+      <% } %>
+    </div>
+
+    <!-- Low Stock Alerts -->
+    <div class="card">
+      <div class="card-header">
+        <h2 class="card-title">Low Stock Alerts</h2>
+        <a href="/products" class="card-link">View all →</a>
+      </div>
+      <% if (lowStock.length === 0) { %>
+        <div class="empty-state green">✓ All products are well-stocked</div>
+      <% } else { %>
+      <div class="alert-list">
+        <% lowStock.forEach(p => { %>
+        <div class="alert-row alert-<%= p.alertLevel %>">
+          <div>
+            <strong><%= p.name %></strong>
+            <span class="muted"><%= p.category %></span>
+          </div>
+          <div class="stock-badge stock-<%= p.alertLevel %>">
+            <%= p.stock %> left
+          </div>
+        </div>
+        <% }) %>
+      </div>
+      <% } %>
+    </div>
+  </div>
+
+  <!-- Recent String Analysis History -->
+  <div class="card mt-4">
+    <div class="card-header">
+      <h2 class="card-title">Recent String Analysis</h2>
+      <a href="/analyzer" class="card-link">Try analyzer →</a>
+    </div>
+    <% if (recentHistory.length === 0) { %>
+      <div class="empty-state">No analyses yet. <a href="/analyzer">Try the analyzer →</a></div>
+    <% } else { %>
+    <div class="table-wrap">
+      <table class="table">
+        <thead>
+          <tr><th>Input 1</th><th>Input 2</th><th>Mode</th><th>Result</th><th>Date</th></tr>
+        </thead>
+        <tbody>
+          <% recentHistory.forEach(h => { %>
+          <tr>
+            <td><code><%= h.input1 %></code></td>
+            <td><code><%= h.input2 %></code></td>
+            <td><span class="badge <%= h.mode === 'Case Sensitive' ? 'badge-orange' : 'badge-blue' %>"><%= h.mode %></span></td>
+            <td><strong class="pct-<%= h.percentage >= 50 ? 'high' : 'low' %>"><%= h.percentage %>%</strong></td>
+            <td class="muted"><%= new Date(h.createdAt).toLocaleDateString('id-ID') %></td>
+          </tr>
+          <% }) %>
+        </tbody>
+      </table>
+    </div>
+    <% } %>
+  </div>
+</main>
+
+<%- include('../partials/footer') %>

@@ -1,0 +1,59 @@
+<%- include('../partials/head') %>
+<% locals.path = '/products' %>
+<%- include('../partials/navbar') %>
+
+<main class="main-content">
+  <%- include('../partials/flash') %>
+
+  <div class="page-header">
+    <div>
+      <h1 class="page-title"><%= product.name %></h1>
+      <p class="page-subtitle"><a href="/products">← Back to Products</a></p>
+    </div>
+    <div class="header-actions">
+      <a href="/products/<%= product._id %>/edit" class="btn btn-secondary">Edit</a>
+      <form action="/products/<%= product._id %>?_method=DELETE" method="POST" style="display:inline;" onsubmit="return confirm('Delete this product?')">
+        <button type="submit" class="btn btn-danger">Delete</button>
+      </form>
+    </div>
+  </div>
+
+  <div class="detail-grid">
+    <div class="card">
+      <h2 class="card-title">Product Details</h2>
+      <dl class="detail-list">
+        <dt>Name</dt><dd><%= product.name %></dd>
+        <dt>Category</dt><dd><span class="tag"><%= product.category %></span></dd>
+        <dt>Price</dt><dd class="price">Rp <%= product.price.toLocaleString('id-ID') %></dd>
+        <dt>Description</dt><dd><%= product.description || '—' %></dd>
+        <dt>Created</dt><dd class="muted"><%= new Date(product.createdAt).toLocaleString('id-ID') %></dd>
+        <dt>Updated</dt><dd class="muted"><%= new Date(product.updatedAt).toLocaleString('id-ID') %></dd>
+      </dl>
+    </div>
+
+    <div class="card">
+      <h2 class="card-title">Stock Information</h2>
+      <%
+        let statusClass = 'ok';
+        let statusLabel = 'In Stock';
+        if (product.stock === 0) { statusClass = 'critical'; statusLabel = 'Out of Stock'; }
+        else if (product.stock <= product.minStock) { statusClass = 'low'; statusLabel = 'Low Stock'; }
+        const stockPct = product.minStock > 0 ? Math.min((product.stock / (product.minStock * 3)) * 100, 100) : 100;
+      %>
+      <div class="stock-display">
+        <div class="stock-number stock-color-<%= statusClass %>"><%= product.stock %></div>
+        <div class="stock-label">Current Units</div>
+        <div class="stock-gauge">
+          <div class="gauge-fill gauge-<%= statusClass %>" style="width: <%= stockPct %>%"></div>
+        </div>
+        <span class="stock-badge stock-<%= statusClass %> mt-2"><%= statusLabel %></span>
+      </div>
+      <dl class="detail-list mt-3">
+        <dt>Min. Alert Level</dt><dd><%= product.minStock %> units</dd>
+        <dt>Stock Value</dt><dd>Rp <%= (product.price * product.stock).toLocaleString('id-ID') %></dd>
+      </dl>
+    </div>
+  </div>
+</main>
+
+<%- include('../partials/footer') %>

@@ -1,0 +1,178 @@
+<%- include('../partials/head') %>
+<% locals.path = '/analyzer' %>
+<%- include('../partials/navbar') %>
+
+<main class="main-content">
+  <%- include('../partials/flash') %>
+
+  <div class="page-header">
+    <div>
+      <h1 class="page-title">String Analyzer</h1>
+      <p class="page-subtitle">Character overlap analysis between two inputs</p>
+    </div>
+  </div>
+
+  <!-- Input Form -->
+  <div class="card analyzer-card">
+    <div class="card-header">
+      <h2 class="card-title">Analyze Inputs</h2>
+      <span class="badge badge-info">Nested Loop + Nested If + Math</span>
+    </div>
+
+    <form action="/analyzer" method="POST" class="analyzer-form">
+      <div class="form-row">
+        <div class="form-group">
+          <label for="input1">Input 1 <span class="hint">(source characters)</span></label>
+          <input type="text" id="input1" name="input1"
+            value="<%= formData.input1 || '' %>"
+            placeholder="e.g. ABBCD"
+            class="mono-input"
+            required />
+        </div>
+        <div class="form-group">
+          <label for="input2">Input 2 <span class="hint">(search within this)</span></label>
+          <input type="text" id="input2" name="input2"
+            value="<%= formData.input2 || '' %>"
+            placeholder="e.g. Gallant Duck"
+            class="mono-input"
+            required />
+        </div>
+      </div>
+
+      <div class="form-group mode-group">
+        <label>Comparison Mode</label>
+        <div class="radio-group">
+          <label class="radio-option <%= (!formData.mode || formData.mode === 'sensitive') ? 'radio-selected' : '' %>">
+            <input type="radio" name="mode" value="sensitive"
+              <%= (!formData.mode || formData.mode === 'sensitive') ? 'checked' : '' %> />
+            <span class="radio-label">
+              <strong>Case Sensitive</strong>
+              <small>'A' ≠ 'a'</small>
+            </span>
+          </label>
+          <label class="radio-option <%= formData.mode === 'insensitive' ? 'radio-selected' : '' %>">
+            <input type="radio" name="mode" value="insensitive"
+              <%= formData.mode === 'insensitive' ? 'checked' : '' %> />
+            <span class="radio-label">
+              <strong>Case Insensitive</strong>
+              <small>'A' = 'a'</small>
+            </span>
+          </label>
+        </div>
+      </div>
+
+      <button type="submit" class="btn btn-primary btn-analyze">Analyze →</button>
+    </form>
+  </div>
+
+  <!-- Result -->
+  <% if (result) { %>
+  <div class="card result-card">
+    <div class="result-header">
+      <div class="result-pct-wrap">
+        <div class="result-pct-circle pct-color-<%= result.percentage >= 60 ? 'high' : result.percentage >= 30 ? 'mid' : 'low' %>">
+          <span class="pct-number"><%= result.percentage %></span>
+          <span class="pct-symbol">%</span>
+        </div>
+      </div>
+      <div class="result-summary">
+        <h2>Analysis Result</h2>
+        <p class="result-formula">
+          <strong><%= result.matchedCount %></strong> of <strong><%= result.totalUnique %></strong>
+          unique characters from Input 1 found in Input 2
+        </p>
+        <p class="result-mode">Mode: <span class="badge <%= result.mode === 'Case Sensitive' ? 'badge-orange' : 'badge-blue' %>"><%= result.mode %></span></p>
+      </div>
+    </div>
+
+    <div class="result-body">
+      <div class="result-row">
+        <div class="result-col">
+          <h3>Input 1 <span class="muted">"<%= result.input1.raw %>"</span></h3>
+          <div class="char-stats">
+            <span class="tag">Length: <%= result.input1.length %></span>
+            <span class="tag">Unique chars: <%= result.input1.uniqueCount %></span>
+          </div>
+          <div class="char-grid">
+            <% result.uniqueChars.forEach(ch => {
+              const isMatched = result.matchedChars.some(m => m.char === ch);
+            %>
+              <span class="char-chip <%= isMatched ? 'char-match' : 'char-nomatch' %>"><%= ch %></span>
+            <% }) %>
+          </div>
+          <div class="char-legend">
+            <span class="char-chip char-match">●</span> Found in Input 2 &nbsp;
+            <span class="char-chip char-nomatch">●</span> Not found
+          </div>
+        </div>
+
+        <div class="result-col">
+          <h3>Input 2 <span class="muted">"<%= result.input2.raw %>"</span></h3>
+          <div class="char-stats">
+            <span class="tag">Length: <%= result.input2.length %></span>
+          </div>
+          <div class="char-grid input2-chars">
+            <% result.input2.raw.split('').forEach(ch => {
+              const displayCh = ch === ' ' ? '[sp]' : ch;
+              const compareWith = result.mode === 'Case Sensitive' ? ch : ch.toLowerCase();
+              const isHit = result.matchedChars.some(m => m.original === compareWith || (result.mode !== 'Case Sensitive' && m.original === compareWith));
+            %>
+              <span class="char-chip char-input2"><%= displayCh %></span>
+            <% }) %>
+          </div>
+        </div>
+      </div>
+
+      <div class="result-explanation">
+        <h3>Step-by-step Explanation</h3>
+        <div class="explanation-box">
+          <p>1. Unique characters in "<strong><%= result.input1.raw %></strong>": <code>[<%= result.uniqueChars.join(', ') %>]</code> (<%= result.totalUnique %> unique chars)</p>
+          <p>2. Searching in "<strong><%= result.input2.raw %></strong>" using <strong><%= result.mode %></strong> comparison:</p>
+          <ul>
+            <% result.matchedChars.forEach(m => { %>
+              <li class="found">✓ '<%= m.char %>' — found</li>
+            <% }) %>
+            <% result.unmatchedChars.forEach(m => { %>
+              <li class="notfound">✕ '<%= m.char %>' — not found</li>
+            <% }) %>
+          </ul>
+          <p>3. Result: <strong><%= result.matchedCount %> / <%= result.totalUnique %></strong> = <strong><%= result.percentage %>%</strong></p>
+        </div>
+      </div>
+    </div>
+  </div>
+  <% } %>
+
+  <!-- History -->
+  <div class="card mt-4">
+    <div class="card-header">
+      <h2 class="card-title">Analysis History</h2>
+      <span class="muted small">Last 10 analyses</span>
+    </div>
+    <% if (history.length === 0) { %>
+      <div class="empty-state">No history yet.</div>
+    <% } else { %>
+    <div class="table-wrap">
+      <table class="table">
+        <thead>
+          <tr><th>#</th><th>Input 1</th><th>Input 2</th><th>Mode</th><th>Result</th><th>Date</th></tr>
+        </thead>
+        <tbody>
+          <% history.forEach((h, i) => { %>
+          <tr>
+            <td class="muted"><%= i + 1 %></td>
+            <td><code><%= h.input1 %></code></td>
+            <td><code><%= h.input2 %></code></td>
+            <td><span class="badge <%= h.mode === 'Case Sensitive' ? 'badge-orange' : 'badge-blue' %>"><%= h.mode %></span></td>
+            <td><strong class="pct-<%= h.percentage >= 50 ? 'high' : 'low' %>"><%= h.percentage %>%</strong></td>
+            <td class="muted"><%= new Date(h.createdAt).toLocaleString('id-ID') %></td>
+          </tr>
+          <% }) %>
+        </tbody>
+      </table>
+    </div>
+    <% } %>
+  </div>
+</main>
+
+<%- include('../partials/footer') %>

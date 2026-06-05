@@ -1,0 +1,25 @@
+<nav class="navbar">
+  <div class="nav-brand">
+    <span class="brand-icon">⬡</span>
+    <span class="brand-text">HashMicro <strong>IMS</strong></span>
+  </div>
+
+  <% if (currentUser) { %>
+  <ul class="nav-links">
+    <li><a href="/dashboard" class="<%= ['/', '/dashboard'].includes(locals.path) ? 'active' : '' %>">Dashboard</a></li>
+    <li><a href="/products" class="<%= (locals.path || '').startsWith('/products') ? 'active' : '' %>">Products</a></li>
+    <li><a href="/analyzer" class="<%= (locals.path || '').startsWith('/analyzer') ? 'active' : '' %>">String Analyzer</a></li>
+    <% if (currentUser.role === 'admin') { %>
+    <li><a href="/users" class="<%= (locals.path || '').startsWith('/users') ? 'active' : '' %>">Users</a></li>
+    <% } %>
+  </ul>
+
+  <div class="nav-user">
+    <span class="user-badge <%= currentUser.role %>"><%= currentUser.role === 'admin' ? '★' : '◆' %></span>
+    <span class="user-name"><%= currentUser.name %></span>
+    <form action="/auth/logout" method="POST" style="display:inline;">
+      <button type="submit" class="btn-logout">Logout</button>
+    </form>
+  </div>
+  <% } %>
+</nav>
