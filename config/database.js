@@ -1,35 +1,33 @@
 /**
  * Database Configuration
  * Uses NeDB - a lightweight embedded database for Node.js
- * Stores data as JSON files (no separate DB server needed)
+ * Running in in-memory mode for Vercel serverless compatibility
+ * (Vercel has a read-only filesystem; data is seeded fresh on each cold start)
  */
 
 const Datastore = require('@seald-io/nedb');
 const path = require('path');
 
-const DB_DIR = path.join(__dirname, '../data');
+// In production (Vercel), use in-memory mode (no file persistence).
+// In development, persist to local files for a better dev experience.
+const isProduction = process.env.NODE_ENV === 'production' || process.env.VERCEL;
 
-// Ensure data directory exists
-const fs = require('fs');
-if (!fs.existsSync(DB_DIR)) {
-  fs.mkdirSync(DB_DIR, { recursive: true });
-}
+const makeStore = (filename) => {
+  if (isProduction) {
+    return new Datastore({ autoload: true });
+  }
+  const DB_DIR = path.join(__dirname, '../data');
+  const fs = require('fs');
+  if (!fs.existsSync(DB_DIR)) {
+    fs.mkdirSync(DB_DIR, { recursive: true });
+  }
+  return new Datastore({ filename: path.join(DB_DIR, filename), autoload: true });
+};
 
 const db = {
-  users: new Datastore({
-    filename: path.join(DB_DIR, 'users.db'),
-    autoload: true,
-  }),
-
-  products: new Datastore({
-    filename: path.join(DB_DIR, 'products.db'),
-    autoload: true,
-  }),
-
-  transactions: new Datastore({
-    filename: path.join(DB_DIR, 'transactions.db'),
-    autoload: true,
-  }),
+  users: makeStore('users.db'),
+  products: makeStore('products.db'),
+  transactions: makeStore('transactions.db'),
 };
 
 // Promisify NeDB methods for cleaner async/await usage

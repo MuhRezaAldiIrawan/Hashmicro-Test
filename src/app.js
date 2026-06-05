@@ -10,8 +10,10 @@
  *   - Session-based authentication
  */
 
+require('dotenv').config();
+
 const express = require('express');
-const session = require('express-session');
+const cookieSession = require('cookie-session');
 const flash = require('connect-flash');
 const methodOverride = require('method-override');
 const path = require('path');
@@ -39,11 +41,15 @@ app.use(express.json());
 app.use(methodOverride('_method'));
 
 // ─── Session ──────────────────────────────────────────────────────────────────
-app.use(session({
+// Uses cookie-session: session data is stored in a signed cookie on the client.
+// This works in Vercel's serverless environment where server-side memory is not
+// shared across function instances.
+app.use(cookieSession({
+  name: 'session',
   secret: process.env.SESSION_SECRET || 'hashmicro-secret-key-change-in-production',
-  resave: false,
-  saveUninitialized: false,
-  cookie: { maxAge: 24 * 60 * 60 * 1000 }, // 24 hours
+  maxAge: 24 * 60 * 60 * 1000, // 24 hours
+  httpOnly: true,
+  sameSite: 'lax',
 }));
 
 // ─── Flash Messages ───────────────────────────────────────────────────────────
@@ -51,6 +57,19 @@ app.use(flash());
 
 // ─── Global Locals (inject currentUser + flash into all views) ────────────────
 app.use(injectUser);
+
+// ─── Lazy Init (seed admin once per cold start) ───────────────────────────────
+let initPromise = null;
+function ensureInit() {
+  if (!initPromise) {
+    initPromise = UserModel.seedAdmin().catch(console.error);
+  }
+  return initPromise;
+}
+
+app.use((req, res, next) => {
+  ensureInit().then(() => next()).catch(next);
+});
 
 // ─── Routes ───────────────────────────────────────────────────────────────────
 app.use('/', routes);
@@ -67,19 +86,18 @@ app.use((err, req, res, next) => {
 });
 
 // ─── Startup ──────────────────────────────────────────────────────────────────
-async function start() {
-  // Seed default admin account if no users exist
-  await UserModel.seedAdmin();
-
-  app.listen(PORT, () => {
-    console.log('');
-    console.log('  ⬡  HashMicro IMS — Technical Test');
-    console.log(`  🚀 Running at: http://localhost:${PORT}`);
-    console.log(`  👤 Default login: admin / admin123`);
-    console.log('');
-  });
+// In development / direct run: start the HTTP server.
+// On Vercel (serverless): just export the app — Vercel handles listening.
+if (require.main === module) {
+  UserModel.seedAdmin().then(() => {
+    app.listen(PORT, () => {
+      console.log('');
+      console.log('  ⬡  HashMicro IMS — Technical Test');
+      console.log(`  🚀 Running at: http://localhost:${PORT}`);
+      console.log(`  👤 Default login: admin / admin123`);
+      console.log('');
+    });
+  }).catch(console.error);
 }
-
-start().catch(console.error);
 
 module.exports = app;

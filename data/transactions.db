@@ -1,0 +1,2 @@
+{"type":"string_analysis","userId":"TRMRH9OqS2JdV8Vq","input1":"ZZZZ","input2":"Super Hero","mode":"Case Sensitive","percentage":0,"summary":"0 / 1 unique characters found → 0%","createdAt":{"$$date":1780631137217},"updatedAt":{"$$date":1780631137217},"_id":"UYAJy2LPLYN639yN"}
+{"type":"string_analysis","userId":"TRMRH9OqS2JdV8Vq","input1":"BSOPER","input2":"Super Hero","mode":"Case Sensitive","percentage":16.67,"summary":"1 / 6 unique characters found → 16.67%","createdAt":{"$$date":1780631156717},"updatedAt":{"$$date":1780631156717},"_id":"fNAiDzFoun4nEI5q"}
