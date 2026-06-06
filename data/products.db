@@ -1,18 +1,5 @@
-{"name":"Wireless Mouse","category":"Electronics","price":320000,"stock":2,"minStock":5,"createdAt":{"$$date":1780544504080},"updatedAt":{"$$date":1780544504080},"_id":"0H2ufcUjVNwiZm8J"}
-{"name":"Whiteboard 120x90cm","category":"Office Supplies","price":650000,"stock":10,"minStock":2,"createdAt":{"$$date":1780544504081},"updatedAt":{"$$date":1780544504081},"_id":"1q4TWEldfoEv8vgx"}
-{"name":"Bottled Water 600ml (Case)","category":"Food & Beverage","price":40000,"stock":30,"minStock":15,"createdAt":{"$$date":1780544504082},"updatedAt":{"$$date":1780544504082},"_id":"246q51rldtbqTflB"}
-{"name":"Work Boots Steel Toe","category":"Clothing","price":850000,"stock":3,"minStock":5,"createdAt":{"$$date":1780544504082},"updatedAt":{"$$date":1780544504082},"_id":"2YYNlzF3ty5ezFZT"}
-{"name":"Monitor LG 27\" 4K","category":"Electronics","price":5200000,"stock":8,"minStock":2,"description":"4K UHD monitor with HDR support","createdAt":{"$$date":1780544504079},"updatedAt":{"$$date":1780544504079},"_id":"6gleKSeAgHwI8P7T"}
-{"name":"Hoodie Fleece","category":"Clothing","price":320000,"stock":18,"minStock":5,"createdAt":{"$$date":1780544504082},"updatedAt":{"$$date":1780544504082},"_id":"BJXEaXFa3kD5KS1X"}
-{"name":"A4 Paper Ream","category":"Office Supplies","price":55000,"stock":45,"minStock":20,"createdAt":{"$$date":1780544504081},"updatedAt":{"$$date":1780544504081},"_id":"CnwsDbocX3KLGW38"}
-{"name":"Screwdriver Set","category":"Tools","price":145000,"stock":15,"minStock":4,"createdAt":{"$$date":1780544504082},"updatedAt":{"$$date":1780544504082},"_id":"GeVplvE5N5Zogynm"}
-{"name":"Coffee Sachet Box","category":"Food & Beverage","price":120000,"stock":0,"minStock":5,"createdAt":{"$$date":1780544504082},"updatedAt":{"$$date":1780544504082},"_id":"GfMax1vJRtZQG0FU"}
-{"name":"T-Shirt Cotton Premium","category":"Clothing","price":185000,"stock":50,"minStock":10,"createdAt":{"$$date":1780544504082},"updatedAt":{"$$date":1780544504082},"_id":"GrJFmdmNvOAu7OH2"}
-{"name":"Cordless Drill","category":"Tools","price":780000,"stock":7,"minStock":2,"createdAt":{"$$date":1780544504082},"updatedAt":{"$$date":1780544504082},"_id":"LhoCok0q8S7fLLF2"}
-{"name":"Mechanical Keyboard","category":"Electronics","price":850000,"stock":25,"minStock":5,"createdAt":{"$$date":1780544504080},"updatedAt":{"$$date":1780544504080},"_id":"RY0Tz0QlXhQRd8tr"}
-{"name":"Office Chair Ergonomic","category":"Office Supplies","price":3200000,"stock":6,"minStock":2,"createdAt":{"$$date":1780544504081},"updatedAt":{"$$date":1780544504081},"_id":"cSzfaz6VE4fLpsVC"}
-{"name":"Laptop Dell XPS 15","category":"Electronics","price":18500000,"stock":12,"minStock":3,"description":"High-performance laptop for professionals","createdAt":{"$$date":1780544504079},"updatedAt":{"$$date":1780544504079},"_id":"nBB74e9cYHyonw45"}
-{"name":"Standing Desk","category":"Office Supplies","price":4500000,"stock":4,"minStock":2,"createdAt":{"$$date":1780544504081},"updatedAt":{"$$date":1780544504081},"_id":"oGuDFg3TxgzdNdSI"}
-{"name":"Ballpoint Pen Box","category":"Office Supplies","price":45000,"stock":1,"minStock":10,"createdAt":{"$$date":1780544504081},"updatedAt":{"$$date":1780544504081},"_id":"ssELEF7KddgH1GZZ"}
-{"name":"Instant Noodles (Box)","category":"Food & Beverage","price":85000,"stock":60,"minStock":20,"createdAt":{"$$date":1780544504082},"updatedAt":{"$$date":1780544504082},"_id":"v4PNVlWWwdNiZHwA"}
-{"name":"USB-C Hub 7-in-1","category":"Electronics","price":280000,"stock":0,"minStock":5,"createdAt":{"$$date":1780544504080},"updatedAt":{"$$date":1780544504080},"_id":"wa5onBNjOIXS4RST"}
+{"name":"Kopi","category":"Food & Beverage","price":50000,"stock":100,"minStock":5,"description":"Koki Kapal Api","createdAt":{"$$date":1780726576853},"updatedAt":{"$$date":1780726576853},"_id":"9FaWHiIsQokmkpNo"}
+{"name":"Laptop Asus updated","category":"Electronics","price":11000000,"stock":10,"minStock":"5","description":"Laptop Asus terbaru","createdAt":{"$$date":1780726429483},"updatedAt":{"$$date":1780726450841},"_id":"W0zEHn0SvV6PAI79"}
+{"name":"Pisau","category":"Tools","price":20000,"stock":100,"minStock":5,"description":"Pisau dapur","createdAt":{"$$date":1780726474467},"updatedAt":{"$$date":1780726474467},"_id":"bE3JEs28GqK0QdtD"}
+{"name":"Meja","category":"Office Supplies","price":150000,"stock":100,"minStock":"5","description":"Meja Kantor updated","createdAt":{"$$date":1780726550116},"updatedAt":{"$$date":1780727410868},"_id":"qA8exVWV2UAAarPh"}
+{"name":"Laptop Asus updated","category":"Electronics","price":11000000,"stock":2,"minStock":"5","description":"Laptop Asus terbaru","createdAt":{"$$date":1780726429483},"updatedAt":{"$$date":1780728071881},"_id":"W0zEHn0SvV6PAI79"}

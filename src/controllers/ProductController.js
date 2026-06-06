@@ -13,7 +13,7 @@ class ProductController {
       let products;
 
       if (search) {
-        products = await ProductModel.search(search);
+        products = await ProductModel.search(search, category || null);
       } else if (category) {
         products = await ProductModel.findByCategory(category);
       } else {

@@ -146,12 +146,16 @@ class ProductModel extends BaseModel {
   }
 
   /**
-   * Search products by name (case-insensitive)
+   * Search products by name (case-insensitive), optionally filtered by category
    */
-  async search(keyword) {
+  async search(keyword, category = null) {
     const all = await this.findAll();
     const lower = keyword.toLowerCase();
-    return all.filter(p => p.name.toLowerCase().includes(lower));
+    return all.filter(p => {
+      const matchesName = p.name.toLowerCase().includes(lower);
+      const matchesCategory = !category || p.category === category;
+      return matchesName && matchesCategory;
+    });
   }
 }
 

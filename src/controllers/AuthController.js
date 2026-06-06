@@ -76,9 +76,8 @@ class AuthController {
 
   // ── POST /auth/logout ───────────────────────────────────────────────────────
   logout(req, res) {
-    req.session.destroy(() => {
-      res.redirect('/auth/login');
-    });
+    req.session = null;
+    res.redirect('/auth/login');
   }
 }
 

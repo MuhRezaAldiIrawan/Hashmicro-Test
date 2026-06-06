@@ -27,13 +27,15 @@ router.post('/auth/logout', requireLogin, AuthController.logout);
 router.get('/dashboard', requireLogin, DashboardController.index.bind(DashboardController));
 
 // ── Products (CRUD) ───────────────────────────────────────────────────────────
+// Read: semua user yang login bisa lihat
 router.get('/products', requireLogin, ProductController.index.bind(ProductController));
-router.get('/products/new', requireLogin, ProductController.showCreate);
-router.post('/products', requireLogin, ProductController.create.bind(ProductController));
 router.get('/products/:id', requireLogin, ProductController.show.bind(ProductController));
-router.get('/products/:id/edit', requireLogin, ProductController.showEdit.bind(ProductController));
-router.put('/products/:id', requireLogin, ProductController.update.bind(ProductController));
-router.delete('/products/:id', requireLogin, ProductController.destroy.bind(ProductController));
+// Write: hanya admin
+router.get('/products/new', requireLogin, requireAdmin, ProductController.showCreate);
+router.post('/products', requireLogin, requireAdmin, ProductController.create.bind(ProductController));
+router.get('/products/:id/edit', requireLogin, requireAdmin, ProductController.showEdit.bind(ProductController));
+router.put('/products/:id', requireLogin, requireAdmin, ProductController.update.bind(ProductController));
+router.delete('/products/:id', requireLogin, requireAdmin, ProductController.destroy.bind(ProductController));
 
 // ── String Analyzer ───────────────────────────────────────────────────────────
 router.get('/analyzer', requireLogin, StringAnalyzerController.index.bind(StringAnalyzerController));

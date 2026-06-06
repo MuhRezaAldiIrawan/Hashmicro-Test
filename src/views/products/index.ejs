@@ -1,92 +1,111 @@
 <%- include('../partials/head') %>
-<% locals.path = '/products' %>
-<%- include('../partials/navbar') %>
+  <% locals.path='/products' %>
+    <%- include('../partials/navbar') %>
 
-<main class="main-content">
-  <%- include('../partials/flash') %>
+      <main class="main-content">
+        <%- include('../partials/flash') %>
 
-  <div class="page-header">
-    <div>
-      <h1 class="page-title">Products</h1>
-      <p class="page-subtitle"><%= products.length %> product(s) found</p>
-    </div>
-    <a href="/products/new" class="btn btn-primary">+ Add Product</a>
-  </div>
-
-  <!-- Filters -->
-  <div class="card filter-card">
-    <form action="/products" method="GET" class="filter-form">
-      <div class="form-row">
-        <div class="form-group">
-          <label>Search</label>
-          <input type="text" name="search" placeholder="Product name..." value="<%= filter.search || '' %>" />
-        </div>
-        <div class="form-group">
-          <label>Category</label>
-          <select name="category">
-            <option value="">All Categories</option>
-            <% categories.forEach(cat => { %>
-              <option value="<%= cat %>" <%= filter.category === cat ? 'selected' : '' %>><%= cat %></option>
-            <% }) %>
-          </select>
-        </div>
-        <div class="form-group form-group-btn">
-          <button type="submit" class="btn btn-secondary">Filter</button>
-          <a href="/products" class="btn btn-ghost">Clear</a>
-        </div>
-      </div>
-    </form>
-  </div>
-
-  <!-- Products Table -->
-  <div class="card">
-    <% if (products.length === 0) { %>
-      <div class="empty-state">No products found. <a href="/products/new">Add first product →</a></div>
-    <% } else { %>
-    <div class="table-wrap">
-      <table class="table">
-        <thead>
-          <tr>
-            <th>Name</th>
-            <th>Category</th>
-            <th>Price</th>
-            <th>Stock</th>
-            <th>Status</th>
-            <th>Actions</th>
-          </tr>
-        </thead>
-        <tbody>
-          <% products.forEach(product => { %>
-          <%
-            let stockStatus = 'ok';
-            let stockLabel = 'In Stock';
-            if (product.stock === 0) { stockStatus = 'critical'; stockLabel = 'Out of Stock'; }
-            else if (product.stock <= product.minStock) { stockStatus = 'low'; stockLabel = 'Low Stock'; }
-          %>
-          <tr>
-            <td>
-              <a href="/products/<%= product._id %>" class="product-link"><%= product.name %></a>
-              <% if (product.description) { %>
-                <div class="muted small"><%= product.description.substring(0, 40) %><%= product.description.length > 40 ? '…' : '' %></div>
+          <div class="page-header">
+            <div>
+              <h1 class="page-title">Products</h1>
+              <p class="page-subtitle">
+                <%= products.length %> product(s) found
+              </p>
+            </div>
+            <% if (currentUser && currentUser.role==='admin' ) { %>
+              <a href="/products/new" class="btn btn-primary">+ Add Product</a>
               <% } %>
-            </td>
-            <td><span class="tag"><%= product.category %></span></td>
-            <td>Rp <%= product.price.toLocaleString('id-ID') %></td>
-            <td class="mono"><%= product.stock %></td>
-            <td><span class="stock-badge stock-<%= stockStatus %>"><%= stockLabel %></span></td>
-            <td class="actions-cell">
-              <a href="/products/<%= product._id %>/edit" class="btn btn-xs btn-secondary">Edit</a>
-              <form action="/products/<%= product._id %>?_method=DELETE" method="POST" style="display:inline;" onsubmit="return confirm('Delete <%= product.name %>?')">
-                <button type="submit" class="btn btn-xs btn-danger">Delete</button>
-              </form>
-            </td>
-          </tr>
-          <% }) %>
-        </tbody>
-      </table>
-    </div>
-    <% } %>
-  </div>
-</main>
+          </div>
 
-<%- include('../partials/footer') %>
+          <!-- Filters -->
+          <div class="card filter-card">
+            <form action="/products" method="GET" class="filter-form">
+              <div class="form-row">
+                <div class="form-group">
+                  <label>Search</label>
+                  <input type="text" name="search" placeholder="Product name..." value="<%= filter.search || '' %>" />
+                </div>
+                <div class="form-group">
+                  <label>Category</label>
+                  <select name="category">
+                    <option value="">All Categories</option>
+                    <% categories.forEach(cat=> { %>
+                      <option value="<%= cat %>" <%=filter.category===cat ? 'selected' : '' %>><%= cat %>
+                      </option>
+                      <% }) %>
+                  </select>
+                </div>
+                <div class="form-group form-group-btn">
+                  <button type="submit" class="btn btn-secondary">Filter</button>
+                  <a href="/products" class="btn btn-ghost">Clear</a>
+                </div>
+              </div>
+            </form>
+          </div>
+
+          <!-- Products Table -->
+          <div class="card">
+            <% if (products.length===0) { %>
+              <div class="empty-state">No products found. <a href="/products/new">Add first product →</a></div>
+              <% } else { %>
+                <div class="table-wrap">
+                  <table class="table">
+                    <thead>
+                      <tr>
+                        <th>Name</th>
+                        <th>Category</th>
+                        <th>Price</th>
+                        <th>Stock</th>
+                        <th>Status</th>
+                        <th>Actions</th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      <% products.forEach(product=> { %>
+                        <% let stockStatus='ok' ; let stockLabel='In Stock' ; if (product.stock===0) {
+                          stockStatus='critical' ; stockLabel='Out of Stock' ; } else if (product.stock
+                          <=product.minStock) { stockStatus='low' ; stockLabel='Low Stock' ; } %>
+                          <tr>
+                            <td>
+                              <a href="/products/<%= product._id %>" class="product-link">
+                                <%= product.name %>
+                              </a>
+                              <% if (product.description) { %>
+                                <div class="muted small">
+                                  <%= product.description.substring(0, 40) %>
+                                    <%= product.description.length> 40 ? '…' : '' %>
+                                </div>
+                                <% } %>
+                            </td>
+                            <td><span class="tag">
+                                <%= product.category %>
+                              </span></td>
+                            <td>Rp <%= product.price.toLocaleString('id-ID') %>
+                            </td>
+                            <td class="mono">
+                              <%= product.stock %>
+                            </td>
+                            <td><span class="stock-badge stock-<%= stockStatus %>">
+                                <%= stockLabel %>
+                              </span></td>
+                            <td class="actions-cell">
+                              <% if (currentUser && currentUser.role==='admin' ) { %>
+                                <a href="/products/<%= product._id %>/edit" class="btn btn-xs btn-secondary">Edit</a>
+                                <form action="/products/<%= product._id %>?_method=DELETE" method="POST"
+                                  style="display:inline;" onsubmit="return confirm('Delete <%= product.name %>?')">
+                                  <button type="submit" class="btn btn-xs btn-danger">Delete</button>
+                                </form>
+                                <% } else { %>
+                                  <a href="/products/<%= product._id %>" class="btn btn-xs btn-ghost">View</a>
+                                  <% } %>
+                            </td>
+                          </tr>
+                          <% }) %>
+                    </tbody>
+                  </table>
+                </div>
+                <% } %>
+          </div>
+      </main>
+
+      <%- include('../partials/footer') %>

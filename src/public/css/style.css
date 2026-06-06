@@ -162,7 +162,7 @@ textarea { resize: vertical; }
 .table td { padding: .65rem .75rem; border-bottom: 1px solid var(--border); vertical-align: middle; }
 .table tr:last-child td { border-bottom: none; }
 .table tr:hover td { background: var(--surface2); }
-.actions-cell { display: flex; gap: .35rem; }
+.actions-cell {  gap: .35rem; }
 .product-link { font-weight: 500; }
 
 /* ─── Badges & Tags ──────────────────────────────────────────────────────── */
