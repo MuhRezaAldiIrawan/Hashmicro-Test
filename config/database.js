@@ -1,19 +1,21 @@
 const Datastore = require('@seald-io/nedb');
 const path = require('path');
 
-// Production/Vercel: in-memory (filesystem read-only). Development: file-based.
+// Production/Vercel: tulis ke /tmp (satu-satunya folder writable di serverless).
+// Development: tulis ke ./data lokal.
 const isProduction = process.env.NODE_ENV === 'production' || process.env.VERCEL;
 
 const makeStore = (filename) => {
-  if (isProduction) {
-    return new Datastore({ autoload: true });
-  }
-  const DB_DIR = path.join(__dirname, '../data');
   const fs = require('fs');
-  if (!fs.existsSync(DB_DIR)) {
-    fs.mkdirSync(DB_DIR, { recursive: true });
+  let dbPath;
+  if (isProduction) {
+    dbPath = path.join('/tmp', filename);
+  } else {
+    const DB_DIR = path.join(__dirname, '../data');
+    if (!fs.existsSync(DB_DIR)) fs.mkdirSync(DB_DIR, { recursive: true });
+    dbPath = path.join(DB_DIR, filename);
   }
-  return new Datastore({ filename: path.join(DB_DIR, filename), autoload: true });
+  return new Datastore({ filename: dbPath, autoload: true });
 };
 
 const db = {
