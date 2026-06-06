@@ -8,8 +8,25 @@
     ],
     "routes": [
         {
+            "src": "/css/(.*)",
+            "dest": "src/app.js",
+            "headers": {
+                "Cache-Control": "public, max-age=31536000, immutable"
+            }
+        },
+        {
+            "src": "/js/(.*)",
+            "dest": "src/app.js",
+            "headers": {
+                "Cache-Control": "public, max-age=31536000, immutable"
+            }
+        },
+        {
             "src": "/(.*)",
-            "dest": "src/app.js"
+            "dest": "src/app.js",
+            "headers": {
+                "Cache-Control": "no-store, no-cache, must-revalidate"
+            }
         }
     ]
 }

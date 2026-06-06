@@ -33,6 +33,14 @@ app.use(cookieSession({
 app.use(flash());
 app.use(injectUser);
 
+// Cegah Vercel CDN meng-cache halaman dinamis
+app.use((req, res, next) => {
+  res.setHeader('Cache-Control', 'no-store, no-cache, must-revalidate, proxy-revalidate');
+  res.setHeader('Pragma', 'no-cache');
+  res.setHeader('Expires', '0');
+  next();
+});
+
 let initPromise = null;
 function ensureInit() {
   if (!initPromise) {
