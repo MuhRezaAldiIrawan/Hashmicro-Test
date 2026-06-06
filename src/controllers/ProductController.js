@@ -4,24 +4,13 @@ class ProductController {
 
   async index(req, res) {
     try {
-      const { category, search } = req.query;
-      let products;
-
-      if (search) {
-        products = await ProductModel.search(search, category || null);
-      } else if (category) {
-        products = await ProductModel.findByCategory(category);
-      } else {
-        products = await ProductModel.findAll();
-      }
-
+      const products = await ProductModel.findAll();
       products.sort((a, b) => a.name.localeCompare(b.name));
 
       res.render('products/index', {
         title: 'Products',
         products,
         categories: ProductModel.CATEGORIES,
-        filter: { category, search },
       });
     } catch (err) {
       req.flash('error', err.message);

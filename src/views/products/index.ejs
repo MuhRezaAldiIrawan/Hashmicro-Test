@@ -17,32 +17,6 @@
               <% } %>
           </div>
 
-          <!-- Filters -->
-          <div class="card filter-card">
-            <form action="/products" method="GET" class="filter-form">
-              <div class="form-row">
-                <div class="form-group">
-                  <label>Search</label>
-                  <input type="text" name="search" placeholder="Product name..." value="<%= filter.search || '' %>" />
-                </div>
-                <div class="form-group">
-                  <label>Category</label>
-                  <select name="category">
-                    <option value="">All Categories</option>
-                    <% categories.forEach(cat=> { %>
-                      <option value="<%= cat %>" <%=filter.category===cat ? 'selected' : '' %>><%= cat %>
-                      </option>
-                      <% }) %>
-                  </select>
-                </div>
-                <div class="form-group form-group-btn">
-                  <button type="submit" class="btn btn-secondary">Filter</button>
-                  <a href="/products" class="btn btn-ghost">Clear</a>
-                </div>
-              </div>
-            </form>
-          </div>
-
           <!-- Products Table -->
           <div class="card">
             <% if (products.length===0) { %>
