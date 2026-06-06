@@ -6,7 +6,8 @@
   "scripts": {
     "start": "node src/app.js",
     "dev": "nodemon src/app.js",
-    "seed": "node src/seeders/seed.js"
+    "seed": "node src/seeders/seed.js",
+    "test": "jest"
   },
   "dependencies": {
     "@supabase/supabase-js": "^2.107.0",
@@ -19,6 +20,7 @@
     "method-override": "^3.0.0"
   },
   "devDependencies": {
+    "jest": "^30.4.2",
     "nodemon": "^3.0.3"
   }
 }
