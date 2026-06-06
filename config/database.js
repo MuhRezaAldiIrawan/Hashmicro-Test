@@ -1,65 +1,101 @@
-const Datastore = require('@seald-io/nedb');
-const path = require('path');
+const { createClient } = require('@supabase/supabase-js');
 
-// Production/Vercel: tulis ke /tmp (satu-satunya folder writable di serverless).
-// Development: tulis ke ./data lokal.
-const isProduction = process.env.NODE_ENV === 'production' || process.env.VERCEL;
+let client = null;
 
-const makeStore = (filename) => {
-  const fs = require('fs');
-  let dbPath;
-  if (isProduction) {
-    dbPath = path.join('/tmp', filename);
-  } else {
-    const DB_DIR = path.join(__dirname, '../data');
-    if (!fs.existsSync(DB_DIR)) fs.mkdirSync(DB_DIR, { recursive: true });
-    dbPath = path.join(DB_DIR, filename);
+function getClient() {
+  if (!client) {
+    const url = process.env.SUPABASE_URL;
+    const key = process.env.SUPABASE_SERVICE_KEY;
+    if (!url || !key) throw new Error('SUPABASE_URL and SUPABASE_SERVICE_KEY are required.');
+    client = createClient(url, key, { auth: { persistSession: false } });
   }
-  return new Datastore({ filename: dbPath, autoload: true });
-};
+  return client;
+}
 
-const db = {
-  users: makeStore('users.db'),
-  products: makeStore('products.db'),
-  transactions: makeStore('transactions.db'),
-};
+function fromRow(row) {
+  if (!row) return null;
+  const { id, min_stock, created_at, updated_at, user_id, ...rest } = row;
+  const doc = { _id: id, ...rest };
+  if (min_stock !== undefined) doc.minStock = min_stock;
+  if (created_at !== undefined) doc.createdAt = created_at;
+  if (updated_at !== undefined) doc.updatedAt = updated_at;
+  if (user_id !== undefined) doc.userId = user_id;
+  return doc;
+}
 
-// Promisify NeDB callback API untuk async/await
-const promisify = (db) => {
-  return {
-    find: (query = {}, projection = {}) =>
-      new Promise((resolve, reject) =>
-        db.find(query, projection, (err, docs) => (err ? reject(err) : resolve(docs)))
-      ),
-    findOne: (query) =>
-      new Promise((resolve, reject) =>
-        db.findOne(query, (err, doc) => (err ? reject(err) : resolve(doc)))
-      ),
-    insert: (doc) =>
-      new Promise((resolve, reject) =>
-        db.insert(doc, (err, newDoc) => (err ? reject(err) : resolve(newDoc)))
-      ),
-    update: (query, update, options = {}) =>
-      new Promise((resolve, reject) =>
-        db.update(query, update, options, (err, numReplaced) =>
-          err ? reject(err) : resolve(numReplaced)
-        )
-      ),
-    remove: (query, options = {}) =>
-      new Promise((resolve, reject) =>
-        db.remove(query, options, (err, numRemoved) =>
-          err ? reject(err) : resolve(numRemoved)
-        )
-      ),
-    count: (query = {}) =>
-      new Promise((resolve, reject) =>
-        db.count(query, (err, count) => (err ? reject(err) : resolve(count)))
-      ),
-  };
-};
+function toRow(doc) {
+  const { _id, minStock, createdAt, updatedAt, userId, ...rest } = doc;
+  const row = { ...rest };
+  if (_id !== undefined) row.id = _id;
+  if (minStock !== undefined) row.min_stock = minStock;
+  if (createdAt !== undefined) row.created_at = createdAt;
+  if (updatedAt !== undefined) row.updated_at = updatedAt;
+  if (userId !== undefined) row.user_id = userId;
+  return row;
+}
+
+const makeStore = (tableName) => ({
+  find: async (query = {}) => {
+    let req = getClient().from(tableName).select('*');
+    for (const [key, val] of Object.entries(toRow(query))) {
+      req = req.eq(key, val);
+    }
+    const { data, error } = await req;
+    if (error) throw new Error(error.message);
+    return (data || []).map(fromRow);
+  },
+
+  findOne: async (query) => {
+    let req = getClient().from(tableName).select('*');
+    for (const [key, val] of Object.entries(toRow(query))) {
+      req = req.eq(key, val);
+    }
+    const { data, error } = await req.limit(1);
+    if (error) throw new Error(error.message);
+    return fromRow(data?.[0] || null);
+  },
+
+  insert: async (doc) => {
+    const { data, error } = await getClient()
+      .from(tableName).insert(toRow(doc)).select().single();
+    if (error) throw new Error(error.message);
+    return fromRow(data);
+  },
+
+  update: async (query, update) => {
+    const rowData = toRow(update.$set || update);
+    let req = getClient().from(tableName).update(rowData);
+    for (const [key, val] of Object.entries(toRow(query))) {
+      req = req.eq(key, val);
+    }
+    const { error } = await req;
+    if (error) throw new Error(error.message);
+    return 1;
+  },
+
+  remove: async (query) => {
+    let req = getClient().from(tableName).delete();
+    for (const [key, val] of Object.entries(toRow(query))) {
+      req = req.eq(key, val);
+    }
+    const { error } = await req;
+    if (error) throw new Error(error.message);
+    return 1;
+  },
+
+  count: async (query = {}) => {
+    let req = getClient().from(tableName).select('*', { count: 'exact', head: true });
+    for (const [key, val] of Object.entries(toRow(query))) {
+      req = req.eq(key, val);
+    }
+    const { count, error } = await req;
+    if (error) throw new Error(error.message);
+    return count || 0;
+  },
+});
 
 module.exports = {
-  users: promisify(db.users),
-  products: promisify(db.products),
-  transactions: promisify(db.transactions),
+  users: makeStore('users'),
+  products: makeStore('products'),
+  transactions: makeStore('transactions'),
 };
