@@ -22,8 +22,10 @@
 ## 1. Cara Menjalankan Aplikasi
 
 ### Prasyarat
+
 - Node.js versi 16 ke atas
 - npm
+- Akun Supabase (gratis di [supabase.com](https://supabase.com))
 
 ### Langkah-langkah
 
@@ -34,8 +36,8 @@ cd hashmicro-test
 # 2. Install dependencies
 npm install
 
-# 3. Isi data demo (opsional tapi direkomendasikan)
-npm run seed
+# 3. Salin file env dan isi dengan credentials Supabase
+cp .env.example .env
 
 # 4. Jalankan aplikasi
 npm start
@@ -47,11 +49,68 @@ npm run dev
 Aplikasi berjalan di: **http://localhost:3000**
 
 ### Kredensial Default
-| Username | Password  | Role  |
-|----------|-----------|-------|
-| admin    | admin123  | Admin |
+
+| Username | Password | Role  |
+| -------- | -------- | ----- |
+| admin    | admin123 | Admin |
 
 > Admin dibuat otomatis saat pertama kali aplikasi dijalankan.
+
+### Environment Variables yang Dibutuhkan
+
+| Variable               | Keterangan                                    |
+| ---------------------- | --------------------------------------------- |
+| `SUPABASE_URL`         | URL project Supabase (Project Settings → API) |
+| `SUPABASE_SERVICE_KEY` | Service role key Supabase (bukan anon key)    |
+| `SESSION_SECRET`       | String acak untuk signing cookie session      |
+| `PORT`                 | Port server, default `3000` (opsional)        |
+
+### Setup Tabel Supabase
+
+Jalankan SQL berikut di Supabase SQL Editor:
+
+```sql
+create table users (
+  id uuid primary key default gen_random_uuid(),
+  username text unique not null,
+  password text not null,
+  name text not null,
+  email text,
+  role text not null default 'user',
+  created_at timestamptz default now(),
+  updated_at timestamptz default now()
+);
+
+create table products (
+  id uuid primary key default gen_random_uuid(),
+  name text not null,
+  category text,
+  price numeric default 0,
+  stock integer default 0,
+  min_stock integer default 5,
+  description text,
+  created_at timestamptz default now(),
+  updated_at timestamptz default now()
+);
+
+create table transactions (
+  id uuid primary key default gen_random_uuid(),
+  type text,
+  user_id text,
+  input1 text,
+  input2 text,
+  mode text,
+  percentage numeric,
+  summary text,
+  created_at timestamptz default now(),
+  updated_at timestamptz default now()
+);
+
+-- Disable RLS agar service role bisa akses langsung
+alter table users disable row level security;
+alter table products disable row level security;
+alter table transactions disable row level security;
+```
 
 ---
 
@@ -100,14 +159,15 @@ hashmicro-test/
 │   │   └── js/main.js            ← JavaScript frontend
 │   │
 │   └── seeders/
-│       └── seed.js               ← Script untuk isi data demo
+│       └── seed.js               ← Script seed admin user
 │
 ├── config/
-│   └── database.js               ← Konfigurasi & koneksi database
+│   └── database.js               ← Konfigurasi & koneksi Supabase
 │
+├── .env.example                  ← Template environment variables
 ├── package.json
-├── .gitignore
-└── README.md
+├── vercel.json                   ← Konfigurasi deployment Vercel
+└── DOKUMENTASI.md
 ```
 
 ---
@@ -117,61 +177,69 @@ hashmicro-test/
 MVC (Model-View-Controller) adalah design pattern yang memisahkan aplikasi menjadi 3 lapisan:
 
 ### Model
+
 > File: `src/models/`
 
 Model bertanggung jawab atas **data** dan **logika bisnis**.
-- Berkomunikasi langsung dengan database
+
+- Berkomunikasi langsung dengan database (Supabase)
 - Melakukan validasi data
 - Tidak tahu tentang tampilan (view)
 
-**Contoh di project ini:**
 ```javascript
 // ProductModel.js - hanya mengurus data produk
 class ProductModel extends BaseModel {
-  async getLowStockProducts() { /* logika bisnis */ }
-  async getInventoryAnalytics() { /* kalkulasi analitik */ }
+  async getLowStockProducts() {
+    /* logika bisnis */
+  }
+  async getInventoryAnalytics() {
+    /* kalkulasi analitik */
+  }
 }
 ```
 
 ### View
+
 > File: `src/views/`
 
 View bertanggung jawab atas **tampilan** yang dilihat user.
+
 - Menggunakan template EJS (Embedded JavaScript)
 - Menerima data dari Controller, tidak mengolah data sendiri
-- Hanya berisi logika presentasi (loop untuk menampilkan list, dll.)
 
-**Contoh di project ini:**
 ```html
 <!-- products/index.ejs -->
 <% products.forEach(product => { %>
-  <tr><td><%= product.name %></td></tr>
+<tr>
+  <td><%= product.name %></td>
+</tr>
 <% }) %>
 ```
 
 ### Controller
+
 > File: `src/controllers/`
 
 Controller bertanggung jawab sebagai **penghubung** antara Model dan View.
+
 - Menerima HTTP request dari user
 - Meminta data ke Model
 - Memberikan data ke View untuk ditampilkan
 
-**Contoh di project ini:**
 ```javascript
 // ProductController.js
 async index(req, res) {
-  const products = await ProductModel.findAll(); // ambil data dari Model
-  res.render('products/index', { products });    // kirim ke View
+  const products = await ProductModel.findAll();
+  res.render('products/index', { products });
 }
 ```
 
 ### Alur Request-Response
 
 ```
-Browser → Route → Controller → Model → Database
+Browser → Route → Controller → Model → Database (Supabase)
                      ↓
-Browser ← View ← Controller ← Model ← Database
+Browser ← View ← Controller ← Model ← Database (Supabase)
 ```
 
 ---
@@ -180,72 +248,63 @@ Browser ← View ← Controller ← Model ← Database
 
 ### 4.1 Inheritance (Pewarisan)
 
-`BaseModel` adalah class induk yang berisi semua operasi CRUD dasar.
-Semua model lain mewarisi dari `BaseModel` sehingga tidak perlu menulis ulang kode yang sama.
+`BaseModel` adalah class induk yang berisi semua operasi CRUD dasar. Semua model mewarisinya.
 
 ```javascript
-// BaseModel.js - class induk (Abstract)
 class BaseModel {
-  constructor(db, modelName) { ... }
-  async findAll(query) { ... }   // diwarisi semua child
-  async findById(id) { ... }     // diwarisi semua child
-  async create(data) { ... }     // diwarisi semua child
-  async update(id, data) { ... } // diwarisi semua child
-  async delete(id) { ... }       // diwarisi semua child
+  async findAll(query) { ... }
+  async findById(id) { ... }
+  async create(data) { ... }
+  async update(id, data) { ... }
+  async delete(id) { ... }
 }
 
-// UserModel.js - mewarisi semua method BaseModel
 class UserModel extends BaseModel {
-  async findByUsername(username) { ... }  // method tambahan
-  async authenticate(user, pass) { ... }  // method tambahan
+  async findByUsername(username) { ... }
+  async authenticate(user, pass) { ... }
 }
 
-// ProductModel.js - mewarisi semua method BaseModel
 class ProductModel extends BaseModel {
-  async getLowStockProducts() { ... }     // method tambahan
-  async getInventoryAnalytics() { ... }   // method tambahan
+  async getLowStockProducts() { ... }
+  async getInventoryAnalytics() { ... }
 }
 
-// StringAnalyzerModel.js - mewarisi semua method BaseModel
 class StringAnalyzerModel extends BaseModel {
-  analyze(input1, input2, caseSensitive) { ... } // method tambahan
-  async getHistory() { ... }                      // method tambahan
+  analyze(input1, input2, caseSensitive) { ... }
+  async getHistory() { ... }
 }
 ```
 
 ### 4.2 Encapsulation (Enkapsulasi)
 
-Setiap class menyembunyikan detail implementasinya. User class tidak tahu bagaimana password di-hash, cukup panggil `authenticate()`.
+Detail implementasi disembunyikan di dalam class. Pemanggil tidak perlu tahu bagaimana password di-hash.
 
 ```javascript
 class UserModel extends BaseModel {
-  // Detail hashing disembunyikan di dalam class
   async beforeCreate(data) {
     data.password = await bcrypt.hash(data.password, SALT_ROUNDS);
     return data;
   }
 
-  // Interface publik yang bersih
   async authenticate(username, password) { ... }
 }
 ```
 
 ### 4.3 Polymorphism (Polimorfisme)
 
-Method `beforeCreate()` dan `beforeUpdate()` di `BaseModel` didefinisikan sebagai hook kosong, lalu di-*override* oleh setiap child class dengan perilaku berbeda-beda.
+Method `beforeCreate()` dan `beforeUpdate()` di `BaseModel` di-_override_ oleh setiap child class dengan perilaku berbeda.
 
 ```javascript
-// Di BaseModel - default hook (tidak melakukan apa-apa)
+// BaseModel - default hook
 async beforeCreate(data) { return data; }
-async beforeUpdate(data) { return data; }
 
-// Di UserModel - di-override: hash password
+// UserModel - override: hash password
 async beforeCreate(data) {
   data.password = await bcrypt.hash(data.password, 10);
   return data;
 }
 
-// Di ProductModel - di-override: parsing tipe data
+// ProductModel - override: parsing tipe data
 async beforeCreate(data) {
   data.price = parseFloat(data.price);
   data.stock = parseInt(data.stock);
@@ -255,13 +314,13 @@ async beforeCreate(data) {
 
 ### 4.4 Abstraction (Abstraksi)
 
-`BaseModel` tidak bisa di-instantiate langsung. Ini memaksa developer untuk selalu membuat subclass yang spesifik.
+`BaseModel` tidak bisa di-instantiate langsung.
 
 ```javascript
 class BaseModel {
   constructor(db, modelName) {
     if (new.target === BaseModel) {
-      throw new Error('BaseModel is abstract!'); // tidak bisa: new BaseModel()
+      throw new Error("BaseModel is abstract!");
     }
   }
 }
@@ -272,35 +331,35 @@ class BaseModel {
 ## 5. Fitur-Fitur Aplikasi
 
 ### 5.1 Autentikasi (Login/Register/Logout)
+
 - Login dengan username + password
-- Password di-hash menggunakan **bcryptjs** sebelum disimpan
-- Session management menggunakan **express-session**
+- Password di-hash menggunakan **bcryptjs**
+- Session management menggunakan **cookie-session** (kompatibel Vercel serverless)
 - Proteksi route: halaman tertentu hanya bisa diakses setelah login
 
 ### 5.2 Dashboard
+
 - Statistik ringkasan (total produk, stok, nilai inventaris)
 - Analytics per kategori dengan kalkulasi matematika
 - Alert produk stok rendah
 - Riwayat 5 analisis string terakhir
 
-### 5.3 Manajemen Produk (CRUD Lengkap)
-- **Create**: Tambah produk baru
-- **Read**: Lihat daftar & detail produk
-- **Update**: Edit informasi produk
-- **Delete**: Hapus produk
-- Filter berdasarkan kategori atau pencarian nama
-- Indikator status stok (In Stock / Low Stock / Out of Stock)
+### 5.3 Manajemen Produk (CRUD)
 
-### 5.4 String Analyzer (Fitur Utama Test)
-- Input dua string bebas dari user
+| Aksi                         | User | Admin |
+| ---------------------------- | ---- | ----- |
+| Lihat daftar & detail produk | ✅   | ✅    |
+| Tambah / Edit / Hapus produk | ❌   | ✅    |
+
+### 5.4 String Analyzer
+
+- Input dua string bebas
 - Pilihan mode: Case Sensitive atau Case Insensitive
-- Menghitung persentase karakter input 1 yang ada di input 2
-- Menampilkan hasil secara visual: karakter mana yang ditemukan dan tidak
-- Penjelasan step-by-step
+- Menghitung persentase karakter unik dari input 1 yang ada di input 2
 - Riwayat analisis tersimpan di database
 
 ### 5.5 Manajemen User (Admin Only)
-- Hanya admin yang bisa mengakses
+
 - CRUD untuk semua user
 - Tidak bisa menghapus akun sendiri
 
@@ -308,174 +367,116 @@ class BaseModel {
 
 ## 6. Implementasi Algoritma (Requirement Test)
 
-### 6.1 Nested Loop (Loop Bersarang)
+### 6.1 Nested Loop
 
-**Lokasi:** `ProductModel.js` → method `getInventoryAnalytics()`
-
-```javascript
-async getInventoryAnalytics() {
-  const allProducts = await this.findAll();
-
-  // OUTER LOOP: iterasi setiap produk
-  for (const product of allProducts) {
-    const cat = categoryMap[product.category];
-
-    // operasi pada setiap produk
-    cat.totalStockValue += product.price * product.stock;
-  }
-
-  // OUTER LOOP 2: iterasi setiap kategori
-  for (const key of Object.keys(categoryMap)) {
-    const cat = categoryMap[key];
-
-    // INNER LOOP (nested): iterasi harga untuk hitung rata-rata
-    const sum = cat.prices.reduce((acc, p) => acc + p, 0);
-    const variance = cat.prices.reduce((acc, p) =>
-      acc + Math.pow(p - cat.avgPrice, 2), 0
-    );
-  }
-}
-```
-
-**Lokasi:** `StringAnalyzerModel.js` → method `analyze()`
+**`ProductModel.js` → `getInventoryAnalytics()`**
 
 ```javascript
-analyze(input1, input2, caseSensitive) {
-  const uniqueChars = [...new Set(str1.split(''))];
-
-  // OUTER LOOP: setiap karakter unik dari input1
-  for (const char of uniqueChars) {
-    let found = false;
-
-    // INNER LOOP (nested): cek setiap karakter input2
-    for (let i = 0; i < str2.length; i++) {
-      if (str2[i] === char) {
-        found = true;
-        break;
-      }
-    }
-    // ... proses hasil
-  }
-}
-```
-
-### 6.2 Nested If (If Bersarang)
-
-**Lokasi:** `ProductModel.js` → method `getLowStockProducts()`
-
-```javascript
+// Outer loop: setiap produk
 for (const product of allProducts) {
-  if (product.stock <= product.minStock) {        // IF utama
-    let alertLevel;
-    if (product.stock === 0) {                    // IF nested level 1
-      alertLevel = 'critical';
-    } else if (product.stock <= Math.floor(product.minStock / 2)) { // IF nested level 2
-      alertLevel = 'high';
-    } else {                                      // ELSE
-      alertLevel = 'low';
+  cat.totalStockValue += product.price * product.stock;
+}
+
+// Outer loop 2: setiap kategori
+for (const key of Object.keys(categoryMap)) {
+  // Inner loop (nested): hitung rata-rata & standar deviasi
+  const sum = cat.prices.reduce((acc, p) => acc + p, 0);
+  const variance = cat.prices.reduce((acc, p) => acc + Math.pow(p - cat.avgPrice, 2), 0);
+}
+```
+
+**`StringAnalyzerModel.js` → `analyze()`**
+
+```javascript
+// Outer loop: setiap karakter unik dari input1
+for (const char of uniqueChars) {
+  let found = false;
+  // Inner loop (nested): cek setiap karakter input2
+  for (let i = 0; i < str2.length; i++) {
+    if (str2[i] === char) {
+      found = true;
+      break;
     }
-    result.push({ ...product, alertLevel });
   }
 }
 ```
 
-**Lokasi:** `StringAnalyzerModel.js` → method `analyze()`
+### 6.2 Nested If
+
+**`ProductModel.js` → `getLowStockProducts()`**
 
 ```javascript
-if (found) {                                      // IF utama
-  if (char === ' ') {                             // IF nested
-    matchedChars.push({ char: '[space]' });
+if (product.stock <= product.minStock) {
+  if (product.stock === 0) {
+    alertLevel = "critical";
+  } else if (product.stock <= Math.floor(product.minStock / 2)) {
+    alertLevel = "high";
+  } else {
+    alertLevel = "low";
+  }
+}
+```
+
+**`StringAnalyzerModel.js` → `analyze()`**
+
+```javascript
+if (found) {
+  if (char === " ") {
+    matchedChars.push({ char: "[space]" });
   } else {
     matchedChars.push({ char });
   }
-} else {                                          // ELSE
-  if (char === ' ') {                             // IF nested di ELSE
-    unmatchedChars.push({ char: '[space]' });
+} else {
+  if (char === " ") {
+    unmatchedChars.push({ char: "[space]" });
   } else {
     unmatchedChars.push({ char });
   }
 }
 ```
 
-### 6.3 Mathematics (Matematika)
-
-**Lokasi:** `ProductModel.js` dan `StringAnalyzerModel.js`
+### 6.3 Mathematics
 
 ```javascript
-// 1. Nilai total stok: Harga × Kuantitas
+// Nilai total stok
 cat.totalStockValue += product.price * product.stock;
 
-// 2. Rata-rata harga: Sum / Count
+// Rata-rata harga
 cat.avgPrice = sum / cat.prices.length;
 
-// 3. Standar Deviasi: √(Σ(x - mean)² / n)
-const variance = cat.prices.reduce(
-  (acc, p) => acc + Math.pow(p - cat.avgPrice, 2), 0
-) / cat.prices.length;
+// Standar Deviasi: √(Σ(x - mean)² / n)
+const variance = cat.prices.reduce((acc, p) => acc + Math.pow(p - cat.avgPrice, 2), 0) / cat.prices.length;
 cat.priceStdDev = Math.sqrt(variance);
 
-// 4. Persentase stok sehat: (total - lowStock) / total × 100
+// Persentase stok sehat
 cat.stockHealthPct = ((cat.productCount - cat.lowStockCount) / cat.productCount) * 100;
 
-// 5. Persentase karakter cocok: matched / total × 100
+// Persentase karakter cocok
 const percentage = Math.round((matchedCount / totalUnique) * 100 * 100) / 100;
 ```
 
-### 6.4 CRUD (Create, Read, Update, Delete)
-
-Implementasi penuh di `ProductController.js`:
+### 6.4 CRUD
 
 ```javascript
-// CREATE
-async create(req, res) {
-  await ProductModel.create({ name, category, price, stock });
-}
-
-// READ (list + detail)
-async index(req, res) {
-  const products = await ProductModel.findAll();
-}
-async show(req, res) {
-  const product = await ProductModel.findById(req.params.id);
-}
-
-// UPDATE
-async update(req, res) {
-  await ProductModel.update(req.params.id, { name, price, stock });
-}
-
-// DELETE
-async destroy(req, res) {
-  await ProductModel.delete(req.params.id);
-}
+await ProductModel.create({ name, category, price, stock });
+await ProductModel.findAll();
+await ProductModel.findById(req.params.id);
+await ProductModel.update(req.params.id, { name, price, stock });
+await ProductModel.delete(req.params.id);
 ```
 
 ### 6.5 String Analyzer — Case Sensitive & Case Insensitive
 
-**Contoh dari requirement:**
-
-| Input 1 | Input 2      | Mode            | Unique Chars    | Match     | Result |
-|---------|--------------|-----------------|-----------------|-----------|--------|
-| ABBCD   | Gallant Duck | Case Sensitive  | A,B,C,D (4 unik)| hanya D   | 25%\*  |
-| ABBCD   | Gallant Duck | Case Insensitive| a,b,c,d (4 unik)| a,c,D → 3 | 75%\*  |
-
-> \* Catatan: Soal test menghitung dari **semua** karakter input1 (termasuk duplikat), sedangkan implementasi ini menghitung dari karakter **unik**. Kedua pendekatan disediakan di kode.
-
-**Implementasi di `StringAnalyzerModel.js`:**
+| Input 1 | Input 2      | Mode             | Unique Chars     | Match   | Result |
+| ------- | ------------ | ---------------- | ---------------- | ------- | ------ |
+| ABBCD   | Gallant Duck | Case Sensitive   | A,B,C,D (4 unik) | hanya D | 25%    |
+| ABBCD   | Gallant Duck | Case Insensitive | a,b,c,d (4 unik) | a,c,d   | 75%    |
 
 ```javascript
 analyze(input1, input2, caseSensitive = true) {
-  // Sesuaikan case
   const str1 = caseSensitive ? input1 : input1.toLowerCase();
   const str2 = caseSensitive ? input2 : input2.toLowerCase();
-
-  // Ambil karakter unik dari input1
   const uniqueChars = [...new Set(str1.split(''))];
-
-  // Hitung yang cocok (nested loop)
-  const matched = uniqueChars.filter(char => str2.includes(char));
-
-  // Hitung persentase
   const percentage = (matched.length / uniqueChars.length) * 100;
 }
 ```
@@ -484,32 +485,27 @@ analyze(input1, input2, caseSensitive = true) {
 
 ## 7. Database & Data Layer
 
-Project ini menggunakan **NeDB** — embedded database berbasis file JSON yang tidak memerlukan server database terpisah. Ideal untuk demo/testing.
+Project menggunakan **Supabase** (PostgreSQL as a Service) sebagai database persisten yang kompatibel dengan Vercel serverless.
 
 ### Konfigurasi (`config/database.js`)
 
 ```javascript
-const db = {
-  users: new Datastore({ filename: './data/users.db', autoload: true }),
-  products: new Datastore({ filename: './data/products.db', autoload: true }),
-  transactions: new Datastore({ filename: './data/transactions.db', autoload: true }),
-};
+const { createClient } = require("@supabase/supabase-js");
+
+const client = createClient(process.env.SUPABASE_URL, process.env.SUPABASE_SERVICE_KEY);
 ```
 
-Data disimpan sebagai file teks di folder `src/data/`. Setiap baris adalah satu record JSON.
+### Mapping Kolom
 
-### Promisification
+Database menggunakan snake_case (PostgreSQL convention), sedangkan kode menggunakan camelCase. `config/database.js` menangani konversi otomatis:
 
-NeDB menggunakan callback. Kita bungkus dengan Promise agar bisa pakai `async/await`:
-
-```javascript
-const promisify = (db) => ({
-  find: (query) => new Promise((resolve, reject) =>
-    db.find(query, (err, docs) => err ? reject(err) : resolve(docs))
-  ),
-  // ... dst
-});
-```
+| Kolom DB     | Field Kode  |
+| ------------ | ----------- |
+| `id`         | `_id`       |
+| `min_stock`  | `minStock`  |
+| `created_at` | `createdAt` |
+| `updated_at` | `updatedAt` |
+| `user_id`    | `userId`    |
 
 ---
 
@@ -520,34 +516,44 @@ const promisify = (db) => ({
 ```
 User submit form → AuthController.login()
   → UserModel.authenticate(username, password)
-    → findByUsername(username) → cari di DB
+    → findByUsername(username) → query Supabase
     → bcrypt.compare(password, hashedPassword)
-  → Jika valid: simpan user di req.session
+  → Jika valid: simpan user di req.session (cookie)
   → Redirect ke dashboard
 ```
+
+### Role-Based Access
+
+| Route                              | User | Admin |
+| ---------------------------------- | ---- | ----- |
+| Dashboard, Produk (read), Analyzer | ✅   | ✅    |
+| Tambah/Edit/Hapus Produk           | ❌   | ✅    |
+| Manajemen Users                    | ❌   | ✅    |
 
 ### Middleware
 
 ```javascript
-// Proteksi route: harus login
+// Harus login
 function requireLogin(req, res, next) {
   if (req.session.user) return next();
-  res.redirect('/auth/login');
+  res.redirect("/auth/login");
 }
 
-// Proteksi route: harus admin
+// Harus admin
 function requireAdmin(req, res, next) {
-  if (req.session.user?.role === 'admin') return next();
-  res.redirect('/dashboard');
+  if (req.session.user?.role === "admin") return next();
+  res.redirect("/dashboard");
 }
 ```
 
+### Session
+
+Menggunakan **cookie-session** (bukan express-session). Data session disimpan di cookie yang di-sign — tidak ada penyimpanan di server, kompatibel dengan Vercel serverless.
+
 ### Password Hashing
 
-Password tidak pernah disimpan plain text. Menggunakan **bcryptjs** dengan salt rounds = 10.
-
 ```javascript
-// Saat create user: hash dulu
+// Saat create: hash dulu
 data.password = await bcrypt.hash(data.password, 10);
 
 // Saat login: bandingkan
@@ -558,70 +564,87 @@ const isValid = await bcrypt.compare(plainPassword, hashedPassword);
 
 ## 9. Design Patterns yang Digunakan
 
-| Pattern            | Lokasi                          | Penjelasan                                                      |
-|--------------------|---------------------------------|-----------------------------------------------------------------|
-| **MVC**            | Seluruh aplikasi                | Pemisahan Model, View, Controller                               |
-| **Template Method**| BaseModel hooks                 | `beforeCreate/beforeUpdate` bisa di-override child class        |
-| **Singleton**      | Semua model                     | `module.exports = new UserModel()` — satu instance per app      |
-| **Active Record**  | BaseModel                       | Model tahu cara menyimpan dirinya sendiri ke DB                 |
-| **Middleware Chain**| Express middleware              | Auth check, flash inject, method override dalam pipeline        |
-| **Repository**     | BaseModel                       | Abstraksi akses database dari logika bisnis                     |
+| Pattern              | Lokasi             | Penjelasan                                                 |
+| -------------------- | ------------------ | ---------------------------------------------------------- |
+| **MVC**              | Seluruh aplikasi   | Pemisahan Model, View, Controller                          |
+| **Template Method**  | BaseModel hooks    | `beforeCreate/beforeUpdate` bisa di-override child class   |
+| **Singleton**        | Semua model        | `module.exports = new UserModel()` — satu instance per app |
+| **Repository**       | BaseModel          | Abstraksi akses database dari logika bisnis                |
+| **Middleware Chain** | Express middleware | Auth check, flash inject, method override dalam pipeline   |
 
 ---
 
 ## 10. Penjelasan Setiap File
 
 ### `src/app.js`
-Entry point aplikasi. Mengatur semua middleware Express, view engine, session, dan mendaftarkan routes. Juga memanggil `seedAdmin()` agar admin default selalu ada.
+
+Entry point. Mengatur middleware Express, view engine EJS, cookie-session, flash messages, dan routes. Memanggil `seedAdmin()` otomatis saat startup.
 
 ### `config/database.js`
-Inisialisasi 3 koleksi NeDB (users, products, transactions) dan membungkusnya dengan Promise untuk kemudahan penggunaan `async/await`.
+
+Inisialisasi Supabase client dan menyediakan adapter `find`, `findOne`, `insert`, `update`, `remove`, `count` yang kompatibel dengan interface BaseModel. Menangani konversi snake_case ↔ camelCase.
 
 ### `src/models/BaseModel.js`
-Abstract base class. Berisi implementasi CRUD generik yang diwarisi semua model. Tidak bisa di-instantiate langsung. Menyediakan hook `beforeCreate` dan `beforeUpdate` untuk polimorfisme.
+
+Abstract base class. CRUD generik yang diwarisi semua model. Menyediakan hook `beforeCreate` dan `beforeUpdate`.
 
 ### `src/models/UserModel.js`
-Extends BaseModel. Menambahkan: hashing password (override `beforeCreate`), method autentikasi, pengecekan username duplikat, seeder admin.
+
+Extends BaseModel. Hash password di `beforeCreate`, method autentikasi, seed admin default.
 
 ### `src/models/ProductModel.js`
-Extends BaseModel. Menambahkan: analitik inventaris dengan nested loop + matematika, deteksi stok rendah dengan nested if, pencarian produk.
+
+Extends BaseModel. Analitik inventaris (nested loop + matematika), deteksi stok rendah (nested if).
 
 ### `src/models/StringAnalyzerModel.js`
-Extends BaseModel. Berisi algoritma utama requirement test: menganalisis overlap karakter dua string dengan mode sensitive/insensitive. Menyimpan histori ke database.
+
+Extends BaseModel. Algoritma analisis overlap karakter dua string (nested loop + nested if). Menyimpan histori ke tabel `transactions`.
 
 ### `src/controllers/AuthController.js`
-Menangani alur autentikasi: tampilkan form login/register, proses login (validasi + session), proses register, logout.
+
+Login, register, logout. Logout menggunakan `req.session = null` (cookie-session API).
 
 ### `src/controllers/ProductController.js`
-Implementasi penuh CRUD untuk produk: list (dengan filter), detail, form create, simpan, form edit, update, hapus.
+
+CRUD produk. Write operations (create/update/delete) hanya bisa diakses admin.
 
 ### `src/controllers/StringAnalyzerController.js`
-Menampilkan form analyzer, memproses input dari user, memanggil `StringAnalyzerModel.analyze()`, menyimpan hasil, menampilkan ke view.
+
+Memproses input analyzer, memanggil `StringAnalyzerModel.analyze()`, menyimpan hasil ke history.
 
 ### `src/controllers/DashboardController.js`
-Mengumpulkan data dari beberapa model (analytics, low stock, history, user count) dan mengirimkan ke view dashboard.
+
+Mengumpulkan data analytics, low stock, history, dan user count untuk ditampilkan di dashboard.
 
 ### `src/routes/index.js`
-Mendefinisikan semua URL yang tersedia di aplikasi, menghubungkan URL ke controller method yang tepat, dan memasang middleware auth pada route yang perlu proteksi.
+
+Semua definisi route. Static routes (`/products/new`) didefinisikan sebelum dynamic routes (`/products/:id`) untuk menghindari konflik Express.
 
 ### `src/middleware/auth.js`
-Empat fungsi middleware: `requireLogin`, `requireAdmin`, `redirectIfLoggedIn`, `injectUser`. Menjaga keamanan route dan menyediakan data user ke semua view.
+
+`requireLogin`, `requireAdmin`, `redirectIfLoggedIn`, `injectUser`.
+
+### `src/seeders/seed.js`
+
+Membuat admin default (`admin` / `admin123`) jika belum ada user di database.
 
 ---
 
 ## Teknologi yang Digunakan
 
-| Teknologi       | Fungsi                                      |
-|-----------------|---------------------------------------------|
-| **Node.js**     | Runtime JavaScript                          |
-| **Express.js**  | Web framework (routing, middleware)         |
-| **EJS**         | Template engine untuk view                  |
-| **NeDB**        | Embedded database (file-based JSON)         |
-| **bcryptjs**    | Hashing password                            |
-| **express-session** | Session management                      |
-| **connect-flash**   | Flash messages (notifikasi sementara)   |
-| **method-override** | Mendukung PUT/DELETE dari HTML form     |
+| Teknologi           | Fungsi                                 |
+| ------------------- | -------------------------------------- |
+| **Node.js**         | Runtime JavaScript                     |
+| **Express.js**      | Web framework                          |
+| **EJS**             | Template engine                        |
+| **Supabase**        | Database (PostgreSQL as a Service)     |
+| **bcryptjs**        | Hashing password                       |
+| **cookie-session**  | Session management (Vercel-compatible) |
+| **connect-flash**   | Flash messages                         |
+| **method-override** | Mendukung PUT/DELETE dari HTML form    |
+| **nodemon**         | Auto-restart saat development          |
+| **dotenv**          | Manajemen environment variables        |
 
 ---
 
-*Dibuat untuk HashMicro Technical Test — Node.js MVC Application*
+_Dibuat untuk HashMicro Technical Test — Node.js MVC Application_
