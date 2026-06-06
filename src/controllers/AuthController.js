@@ -1,17 +1,12 @@
-/**
- * AuthController
- * Handles login, register, logout
- */
-
 const UserModel = require('../models/UserModel');
 
 class AuthController {
-  // ── GET /auth/login ─────────────────────────────────────────────────────────
+
   showLogin(req, res) {
     res.render('auth/login', { title: 'Login' });
   }
 
-  // ── POST /auth/login ────────────────────────────────────────────────────────
+
   async login(req, res) {
     try {
       const { username, password } = req.body;
@@ -38,12 +33,12 @@ class AuthController {
     }
   }
 
-  // ── GET /auth/register ──────────────────────────────────────────────────────
+
   showRegister(req, res) {
     res.render('auth/register', { title: 'Register' });
   }
 
-  // ── POST /auth/register ─────────────────────────────────────────────────────
+
   async register(req, res) {
     try {
       const { username, password, name, email } = req.body;
@@ -74,7 +69,7 @@ class AuthController {
     }
   }
 
-  // ── POST /auth/logout ───────────────────────────────────────────────────────
+
   logout(req, res) {
     req.session = null;
     res.redirect('/auth/login');

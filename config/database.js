@@ -1,15 +1,7 @@
-/**
- * Database Configuration
- * Uses NeDB - a lightweight embedded database for Node.js
- * Running in in-memory mode for Vercel serverless compatibility
- * (Vercel has a read-only filesystem; data is seeded fresh on each cold start)
- */
-
 const Datastore = require('@seald-io/nedb');
 const path = require('path');
 
-// In production (Vercel), use in-memory mode (no file persistence).
-// In development, persist to local files for a better dev experience.
+// Production/Vercel: in-memory (filesystem read-only). Development: file-based.
 const isProduction = process.env.NODE_ENV === 'production' || process.env.VERCEL;
 
 const makeStore = (filename) => {
@@ -30,7 +22,7 @@ const db = {
   transactions: makeStore('transactions.db'),
 };
 
-// Promisify NeDB methods for cleaner async/await usage
+// Promisify NeDB callback API untuk async/await
 const promisify = (db) => {
   return {
     find: (query = {}, projection = {}) =>

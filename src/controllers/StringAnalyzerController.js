@@ -1,12 +1,7 @@
-/**
- * StringAnalyzerController
- * Handles the character matching feature from the technical test requirements
- */
-
 const StringAnalyzerModel = require('../models/StringAnalyzerModel');
 
 class StringAnalyzerController {
-  // ── GET /analyzer ────────────────────────────────────────────────────────────
+
   async index(req, res) {
     try {
       const history = await StringAnalyzerModel.getHistory(10);
@@ -21,7 +16,7 @@ class StringAnalyzerController {
     }
   }
 
-  // ── POST /analyzer ───────────────────────────────────────────────────────────
+
   async analyze(req, res) {
     try {
       const { input1, input2, mode } = req.body;

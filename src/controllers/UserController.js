@@ -1,8 +1,3 @@
-/**
- * UserController
- * Admin-only user management (CRUD)
- */
-
 const UserModel = require('../models/UserModel');
 
 class UserController {

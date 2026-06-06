@@ -1,5 +1,4 @@
 {"name":"Kopi","category":"Food & Beverage","price":50000,"stock":100,"minStock":5,"description":"Koki Kapal Api","createdAt":{"$$date":1780726576853},"updatedAt":{"$$date":1780726576853},"_id":"9FaWHiIsQokmkpNo"}
-{"name":"Laptop Asus updated","category":"Electronics","price":11000000,"stock":10,"minStock":"5","description":"Laptop Asus terbaru","createdAt":{"$$date":1780726429483},"updatedAt":{"$$date":1780726450841},"_id":"W0zEHn0SvV6PAI79"}
+{"name":"Laptop Asus updated","category":"Electronics","price":11000000,"stock":2,"minStock":"5","description":"Laptop Asus terbaru","createdAt":{"$$date":1780726429483},"updatedAt":{"$$date":1780728071881},"_id":"W0zEHn0SvV6PAI79"}
 {"name":"Pisau","category":"Tools","price":20000,"stock":100,"minStock":5,"description":"Pisau dapur","createdAt":{"$$date":1780726474467},"updatedAt":{"$$date":1780726474467},"_id":"bE3JEs28GqK0QdtD"}
 {"name":"Meja","category":"Office Supplies","price":150000,"stock":100,"minStock":"5","description":"Meja Kantor updated","createdAt":{"$$date":1780726550116},"updatedAt":{"$$date":1780727410868},"_id":"qA8exVWV2UAAarPh"}
-{"name":"Laptop Asus updated","category":"Electronics","price":11000000,"stock":2,"minStock":"5","description":"Laptop Asus terbaru","createdAt":{"$$date":1780726429483},"updatedAt":{"$$date":1780728071881},"_id":"W0zEHn0SvV6PAI79"}

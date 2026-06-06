@@ -1,12 +1,7 @@
-/**
- * ProductController
- * Full CRUD for Product management
- */
-
 const ProductModel = require('../models/ProductModel');
 
 class ProductController {
-  // ── GET /products ────────────────────────────────────────────────────────────
+
   async index(req, res) {
     try {
       const { category, search } = req.query;
@@ -20,7 +15,6 @@ class ProductController {
         products = await ProductModel.findAll();
       }
 
-      // Sort by name
       products.sort((a, b) => a.name.localeCompare(b.name));
 
       res.render('products/index', {
@@ -35,7 +29,7 @@ class ProductController {
     }
   }
 
-  // ── GET /products/new ────────────────────────────────────────────────────────
+
   showCreate(req, res) {
     res.render('products/form', {
       title: 'Add Product',
@@ -46,7 +40,7 @@ class ProductController {
     });
   }
 
-  // ── POST /products ───────────────────────────────────────────────────────────
+
   async create(req, res) {
     try {
       const { name, category, price, stock, minStock, description } = req.body;
@@ -65,7 +59,7 @@ class ProductController {
     }
   }
 
-  // ── GET /products/:id ────────────────────────────────────────────────────────
+
   async show(req, res) {
     try {
       const product = await ProductModel.findById(req.params.id);
@@ -80,7 +74,7 @@ class ProductController {
     }
   }
 
-  // ── GET /products/:id/edit ───────────────────────────────────────────────────
+
   async showEdit(req, res) {
     try {
       const product = await ProductModel.findById(req.params.id);
@@ -101,7 +95,7 @@ class ProductController {
     }
   }
 
-  // ── PUT /products/:id ────────────────────────────────────────────────────────
+
   async update(req, res) {
     try {
       const { name, category, price, stock, minStock, description } = req.body;
@@ -114,7 +108,7 @@ class ProductController {
     }
   }
 
-  // ── DELETE /products/:id ─────────────────────────────────────────────────────
+
   async destroy(req, res) {
     try {
       const product = await ProductModel.findById(req.params.id);

@@ -1,14 +1,3 @@
-/**
- * StringAnalyzerModel - Extends BaseModel
- *
- * OOP Concept: Inheritance - extends BaseModel to save analysis history to DB,
- * but also adds unique string-analysis logic as per the technical test requirement.
- *
- * Core Feature:
- *   Given two strings and a comparison mode (case-sensitive / case-insensitive),
- *   calculate what percentage of UNIQUE characters from input1 appear in input2.
- */
-
 const BaseModel = require('./BaseModel');
 const db = require('../../config/database');
 
@@ -17,21 +6,7 @@ class StringAnalyzerModel extends BaseModel {
     super(db.transactions, 'StringAnalyzer');
   }
 
-  // ─── Core Analysis Logic ─────────────────────────────────────────────────────
 
-  /**
-   * Analyze character overlap between two strings.
-   *
-   * Algorithm (as per test requirement):
-   *   1. Get unique characters from input1 (deduplicated)
-   *   2. For each unique char in input1, check if it appears in input2
-   *   3. percentage = (matchedChars / uniqueCharsInInput1) * 100
-   *
-   * @param {string} input1
-   * @param {string} input2
-   * @param {boolean} caseSensitive
-   * @returns {Object} detailed analysis result
-   */
   analyze(input1, input2, caseSensitive = true) {
     // ── Prepare strings based on sensitivity mode ─────────────────────────────
     const str1 = caseSensitive ? input1 : input1.toLowerCase();
@@ -72,13 +47,12 @@ class StringAnalyzerModel extends BaseModel {
       }
     }
 
-    // ── Step 3: Mathematics - calculate percentage ────────────────────────────
     const totalUnique = uniqueChars.length;
     const matchedCount = matchedChars.length;
 
-    // Guard against division by zero
+    // Guard: hindari division by zero
     const percentage = totalUnique > 0
-      ? Math.round((matchedCount / totalUnique) * 100 * 100) / 100 // round to 2 decimals
+      ? Math.round((matchedCount / totalUnique) * 100 * 100) / 100
       : 0;
 
     return {
@@ -95,11 +69,7 @@ class StringAnalyzerModel extends BaseModel {
     };
   }
 
-  // ─── Persistence Methods ─────────────────────────────────────────────────────
 
-  /**
-   * Save an analysis result to DB (history)
-   */
   async saveAnalysis(result, userId = null) {
     return await this.create({
       type: 'string_analysis',
@@ -112,12 +82,8 @@ class StringAnalyzerModel extends BaseModel {
     });
   }
 
-  /**
-   * Get recent analysis history
-   */
   async getHistory(limit = 10) {
     const all = await this.findAll({ type: 'string_analysis' });
-    // Sort descending by createdAt, take last `limit`
     return all
       .sort((a, b) => new Date(b.createdAt) - new Date(a.createdAt))
       .slice(0, limit);

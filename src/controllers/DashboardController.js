@@ -1,8 +1,3 @@
-/**
- * DashboardController
- * Shows the main dashboard with inventory summary
- */
-
 const ProductModel = require('../models/ProductModel');
 const UserModel = require('../models/UserModel');
 const StringAnalyzerModel = require('../models/StringAnalyzerModel');
